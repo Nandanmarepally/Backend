@@ -113,7 +113,7 @@ def validate_prompt_data(data):
     }
 
 
-def _prompt_to_dict(prompt: Prompt, view_count: int = 0) -> dict:
+def _prompt_to_dict(prompt: Prompt) -> dict:
     return {
         'id': prompt.id,
         'title': prompt.title,
@@ -121,7 +121,7 @@ def _prompt_to_dict(prompt: Prompt, view_count: int = 0) -> dict:
         'complexity': prompt.complexity,
         'tags': list(prompt.tags.values_list('name', flat=True)),
         'created_at': prompt.created_at.isoformat(),
-        'view_count': view_count,
+        'view_count': prompt.view_count,
     }
 
 
@@ -366,7 +366,7 @@ def prompt_list(request):
 
         data = []
         for p in qs:
-            data.append(_prompt_to_dict(p, 0))
+            data.append(_prompt_to_dict(p))
 
         return JsonResponse(data, safe=False, status=200)
 
@@ -395,7 +395,7 @@ def prompt_list(request):
         tag, _ = Tag.objects.get_or_create(name=name)
         prompt.tags.add(tag)
 
-    return JsonResponse(_prompt_to_dict(prompt, 0), status=201)
+    return JsonResponse(_prompt_to_dict(prompt), status=201)
 
 
 @require_http_methods(['GET'])
@@ -405,10 +405,15 @@ def prompt_detail(request, pk):
     """
     try:
         prompt = Prompt.objects.prefetch_related('tags').get(pk=pk)
+        
+        # Increment the view count when successfully retrieved
+        prompt.view_count += 1
+        prompt.save(update_fields=['view_count'])
+        
     except Prompt.DoesNotExist:
         return JsonResponse({'error': 'Prompt not found.'}, status=404)
 
-    return JsonResponse(_prompt_to_dict(prompt, 0), status=200)
+    return JsonResponse(_prompt_to_dict(prompt), status=200)
 
 
 @require_http_methods(['GET'])

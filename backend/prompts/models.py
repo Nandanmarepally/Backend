@@ -24,6 +24,7 @@ class Prompt(models.Model):
     )
     tags = models.ManyToManyField(Tag, blank=True, related_name='prompts')
     created_at = models.DateTimeField(auto_now_add=True)
+    view_count = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ['-created_at']
